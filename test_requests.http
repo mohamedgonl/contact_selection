@@ -1,0 +1,66 @@
+### API Test Requests cho dự án Contact Selection
+# Yêu cầu: Cài đặt Extension "REST Client" trên VS Code để chạy trực tiếp các request này.
+
+@baseUrl = http://localhost:8080/purchase/event_entry/event_info/ajax
+
+### 1. API Khởi tạo màn hình (Initial Display)
+# Lấy danh sách khu vực (Region) từ hệ thống.
+POST {{baseUrl}}/ref_select_load
+Content-Type: application/json
+
+{
+    "kindRef": 0
+}
+
+###
+
+### 2. API Tìm kiếm - Trường hợp tìm kiếm chung
+# Tìm kiếm bên liên hệ theo tên hoặc các tiêu chí khác.
+POST {{baseUrl}}/ref_select_search
+Content-Type: application/json
+
+{
+    "txtRefNm": "",
+    "txtRefKn": "",
+    "telno": "",
+    "urlAheadSearch": "",
+    "rgonCheck": []
+}
+
+###
+
+### 3. API Tìm kiếm - Tìm theo tên (Forward match)
+POST {{baseUrl}}/ref_select_search
+Content-Type: application/json
+
+{
+    "txtRefNm": "Công ty",
+    "txtRefKn": "",
+    "telno": "",
+    "urlAheadSearch": "",
+    "rgonCheck": []
+}
+
+###
+
+### 4. API Xác nhận - Trường hợp lỗi (Chọn nhiều ở chế độ đơn lẻ)
+# Khi kindRef = 0 (chế độ đơn), chọn > 1 bản ghi sẽ báo lỗi SE4102_00166.
+POST {{baseUrl}}/ref_select_confirm
+Content-Type: application/json
+
+{
+    "kindRef": 0,
+    "contactCds": ["CD001", "CD002"]
+}
+
+###
+
+### 5. API Xác nhận - Trường hợp thành công (Bulk mode)
+# Khi kindRef = 1, cho phép chọn nhiều bản ghi.
+POST {{baseUrl}}/ref_select_confirm
+Content-Type: application/json
+
+{
+    "kindRef": 1,
+    "contactCds": ["CD001", "CD002"]
+}
