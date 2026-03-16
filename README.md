@@ -1,96 +1,130 @@
-# Contact Selection API Project
+# 📞 Contact Selection API Project
 
-Dự án này là hệ thống Backend cung cấp API cho chức năng **Chọn bên liên hệ (Contact Selection)** dựa trên yêu cầu thiết kế của Nhật Bản.
+Dự án này là hệ thống Backend cung cấp API cho chức năng **Chọn bên liên hệ (Contact Selection)** dựa trên yêu cầu thiết kế hệ thống.
 
-## 🚀 Công nghệ sử dụng
+---
 
-- **Java 17**
-- **Spring Boot 3.2.4**
-- **Spring Data JPA** (Hibernat)
-- **MySQL 8.0**
-- **Lombok**
-- **Maven**
-- **Docker & Docker Compose**
+## Prerequisites
 
-## 📂 Cấu trúc dự án
+| Tool | Minimum version |
+|------|----------------|
+| Java SDK | 17 |
+| Maven | 3.8+ |
+| Docker Desktop | 4.x |
+| VS Code / IntelliJ | Latest |
+
+### VS Code Extensions (recommended)
+
+- **Extension Pack for Java** — `vscjava.vscode-java-pack`
+- **Spring Boot Extension Pack** — `vmware.vscode-spring-boot-pack`
+- **REST Client** — `humao.rest-client` (để chạy file `test_requests.http`)
+
+---
+
+## 1 — Start the Database & Application (Docker)
+
+Cách nhanh nhất để chạy dự án mà không cần cài đặt Java hay MySQL:
+
+```bash
+# Từ thư mục gốc chứa docker-compose.yml
+docker-compose up -d --build
+```
+
+Ứng dụng sẽ khả dụng tại: `http://localhost:8080`.
+Hệ thống tự động khởi tạo database `refselect` và nạp dữ liệu mẫu từ `src/main/resources/init.sql`.
+
+**Dừng hệ thống:**
+
+```bash
+docker-compose down
+```
+
+**Đặt lại dữ liệu (Reset):**
+
+```bash
+docker-compose down -v && docker-compose up -d --build
+```
+
+---
+
+## 2 — Run Locally (Maven)
+
+Nếu bạn muốn chạy trực tiếp bằng Maven:
+
+1. Đảm bảo đã có một instance **MySQL 8.0** đang chạy.
+2. Tạo database tên là `refselect`.
+3. Cập nhật thông tin kết nối trong `src/main/resources/application.yml`.
+4. Chạy lệnh:
+
+```bash
+mvn spring-boot:run
+```
+
+---
+
+## 3 — API Endpoints & Testing
+
+### API Endpoints Overview
+
+Hệ thống cung cấp các Endpoint sau để phục vụ màn hình chọn bên liên hệ:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/ajax/ref_select_load` | `POST` | Khởi tạo màn hình, lấy danh sách khu vực (Region). |
+| `/ajax/ref_select_search` | `POST` | Tìm kiếm bên liên hệ với các tiêu chí lọc (Tên, Kana, Tel, URL, Khu vực). |
+| `/ajax/ref_select_confirm` | `POST` | Xác nhận lựa chọn, kiểm tra tính hợp lệ của việc chọn (đơn/đa). |
+
+### Kiểm tra hệ thống với REST Client
+
+Bạn có thể test trực tiếp các API bằng file `test_requests.http` trong dự án:
+
+1.  Cài đặt Extension **REST Client** (`humao.rest-client`) trên VS Code.
+2.  Mở file `test_requests.http`.
+3.  Nhấn vào dòng chữ **Send Request** phía trên mỗi yêu cầu để xem kết quả phản hồi.
+
+---
+
+## 4 — Project Structure
 
 Dự án tuân thủ kiến trúc Clean Architecture:
-- `controller`: Tiếp nhận các yêu cầu HTTP.
-- `service`: Chứa logic nghiệp vụ xử lý dữ liệu.
-- `repository`: Giao diện tương tác với Database (JPA).
-- `entity`: Định nghĩa cấu trúc bảng trong MySQL.
-- `dto`: Các đối tượng truyền tải dữ liệu giữa Client và Server.
 
-## ⚙️ Hướng dẫn cài đặt và chạy dự án
+```
+contact_selection/
+│
+├── src/main/java/com/example/refselect/
+│   ├── controller/      ← Tiếp nhận HTTP requests
+│   ├── service/         ← Xử lý Logic nghiệp vụ
+│   ├── repository/      ← Tương tác Database (JPA)
+│   ├── entity/          ← Định nghĩa cấu trúc bảng
+│   └── dto/             ← Đối tượng truyền tải dữ liệu (Data Transfer Object)
+│
+├── src/main/resources/
+│   ├── application.yml  ← Cấu hình hệ thống
+│   └── init.sql         ← Scripts tạo bảng và nạp dữ liệu mẫu
+│
+├── Dockerfile           ← Cấu hình Build ảnh Docker
+├── docker-compose.yml   ← Cấu hình Orchestration cho App & DB
+├── pom.xml              ← Quản lý dependencies Maven
+└── test_requests.http   ← File test API trực tiếp (REST Client)
+```
 
-### Cách 1: Chạy bằng Docker (Khuyên dùng)
+---
 
-Đây là cách nhanh nhất vì bạn không cần cài đặt Java hoặc MySQL trên máy cá nhân.
+## 5 — Assumptions & Rules
 
-1. Đảm bảo bạn đã cài đặt **Docker** và **Docker Compose**.
-2. Mở terminal tại thư mục gốc của dự án.
-3. Chạy lệnh:
-   ```bash
-   docker-compose up --build
-   ```
-4. Ứng dụng sẽ khả dụng tại địa chỉ: `http://localhost:8080`
+1. **Phân trang logic**: Kết quả tìm kiếm được giới hạn tối đa 80 bản ghi theo yêu cầu.
+2. **Kiểm tra hợp lệ**: API xác nhận sẽ trả về lỗi `SE4102_00166` nếu chọn nhiều bản ghi trong chế độ chọn đơn lẻ (`kindRef = 0`).
+3. **Mã hóa dữ liệu**: Sử dụng UTF-8 cho tất cả các dữ liệu chuỗi để hỗ trợ đa ngôn ngữ.
+4. **Lombok**: Dự án sử dụng Lombok để tối ưu mã nguồn (Getter/Setter/Constructor).
 
-### Cách 2: Chạy trực tiếp bằng Maven
+---
 
-1. Cài đặt **Java 17** và **Maven**.
-2. Cài đặt một instance của **MySQL** và tạo database tên là `refselect`.
-3. Cập nhật thông tin kết nối database (username/password) trong file `src/main/resources/application.yml`.
-4. Chạy lệnh:
-   ```bash
-   mvn spring-boot:run
-   ```
+## 6 — Troubleshooting
 
-## 📡 API Endpoints 
-
-### 1. API Khởi tạo màn hình (Initial Display)
-- **URL:** `POST /purchase/event_entry/event_info/ajax/ref_select_load`
-- **Body yêu cầu:**
-  ```json
-  {
-    "kindRef": 1
-  }
-  ```
-- **Chức năng:** Lấy danh sách các khu vực (Region) từ bảng `RGON_M` để hiển thị trên giao diện.
-
-### 2. API Tìm kiếm (Search)
-- **URL:** `POST /purchase/event_entry/event_info/ajax/ref_select_search`
-- **Body yêu cầu:**
-  ```json
-  {
-    "txtRefNm": "tên",
-    "txtRefKn": "kana",
-    "telno": "090",
-    "urlAheadSearch": "google",
-    "rgonCheck": [1, 2]
-  }
-  ```
-- **Chức năng:** Tìm kiếm nâng cao với phân trang logic (giới hạn 80 bản ghi) và tự động nối URL.
-
-### 3. API Xác nhận lựa chọn (Confirm)
-- **URL:** `POST /purchase/event_entry/event_info/ajax/ref_select_confirm`
-- **Body yêu cầu:**
-  ```json
-  {
-    "kindRef": 0,
-    "contactCds": ["CD001", "CD002"]
-  }
-  ```
-- **Chức năng:** Kiểm tra tính hợp lệ của việc lựa chọn. Trả về lỗi `SE4102_00166` nếu chọn nhiều bản ghi trong chế độ không cho phép.
-
-## 🛠️ Trạng thái phát triển (TASK.md)
-
-- [x] **Task 1: Cài đặt API hiển thị ban đầu** (Hoàn thành)
-- [x] **Task 2: Cài đặt API tìm kiếm** (Hoàn thành)
-- [x] **Task 3: Cài đặt API lựa chọn** (Hoàn thành)
-
-## 📝 Nhật ký ghi chú (AI Rules)
-
-- Tuân thủ nghiêm ngặt các tài liệu thiết kế tiếng Nhật.
-- Sử dụng **Lombok** để giảm mã thừa (Boilerplate code).
-- Sử dụng **Constructor Injection** cho Dependency Injection.
-- Cấu hình Docker để chạy nhanh trên mọi môi trường.
+| Issue | Solution |
+|-------|---------|
+| `Connection refused` | Kiểm tra Docker container `mysql-db` đã ở trạng thái `healthy` chưa bằng lệnh `docker ps`. |
+| `Duplicate entry` | Xảy ra khi chạy lại scripts nạp dữ liệu. Hãy chạy `docker-compose down -v` để xóa Volume cũ trước khi khởi động lại. |
+| DB không có dữ liệu | Kiểm tra log của container ứng dụng: `docker logs refselect-app`. |
+| Lỗi chính tả bảng | Lưu ý MySQL trên Linux (Docker) phân biệt chữ hoa chữ thường. Luôn sử dụng chữ thường cho tên bảng. |
+| Hiển thị dấu hỏi (`?`) | Lỗi mã hóa font. Đảm bảo file SQL lưu ở định dạng `UTF-8` và URL JDBC có tham số `useUnicode=true&characterEncoding=UTF-8`. |
