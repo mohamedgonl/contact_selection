@@ -31,7 +31,7 @@ docker-compose up -d --build
 ```
 
 Ứng dụng sẽ khả dụng tại: `http://localhost:8080`.
-Hệ thống tự động khởi tạo database `refselect` và nạp dữ liệu mẫu từ `src/main/resources/init.sql`.
+Hệ thống tự động khởi tạo database `refselect` và nạp dữ liệu mẫu lớn (100+ bản ghi) từ `src/main/resources/init.sql` để phục vụ kiểm thử phân trang và tìm kiếm.
 
 **Dừng hệ thống:**
 

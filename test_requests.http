@@ -14,8 +14,8 @@ Content-Type: application/json
 
 ###
 
-### 2. API Tìm kiếm - Trường hợp tìm kiếm chung
-# Tìm kiếm bên liên hệ theo tên hoặc các tiêu chí khác.
+### 2. API Tìm kiếm - Tìm kiếm tất cả (Vượt quá 80 bản ghi)
+# System should return SI4101_00063 because we have 100+ records.
 POST {{baseUrl}}/ref_select_search
 Content-Type: application/json
 
@@ -30,11 +30,12 @@ Content-Type: application/json
 ###
 
 ### 3. API Tìm kiếm - Tìm theo tên (Forward match)
+# Tìm các công ty bắt đầu bằng "Company 1" (sẽ ra CD001, CD010-019, v.v.)
 POST {{baseUrl}}/ref_select_search
 Content-Type: application/json
 
 {
-    "txtRefNm": "Công ty",
+    "txtRefNm": "Company 1",
     "txtRefKn": "",
     "telno": "",
     "urlAheadSearch": "",
@@ -43,8 +44,91 @@ Content-Type: application/json
 
 ###
 
-### 4. API Xác nhận - Trường hợp lỗi (Chọn nhiều ở chế độ đơn lẻ)
-# Khi kindRef = 0 (chế độ đơn), chọn > 1 bản ghi sẽ báo lỗi SE4102_00166.
+### 4. API Tìm kiếm - Tìm theo Kana
+POST {{baseUrl}}/ref_select_search
+Content-Type: application/json
+
+{
+    "txtRefNm": "",
+    "txtRefKn": "コンパニー02",
+    "telno": "",
+    "urlAheadSearch": "",
+    "rgonCheck": []
+}
+
+###
+
+### 5. API Tìm kiếm - Tìm theo Số điện thoại
+POST {{baseUrl}}/ref_select_search
+Content-Type: application/json
+
+{
+    "txtRefNm": "",
+    "txtRefKn": "",
+    "telno": "0900000005",
+    "urlAheadSearch": "",
+    "rgonCheck": []
+}
+
+###
+
+### 6. API Tìm kiếm - Tìm theo khu vực (Region)
+# rgonCheck: [1, 2] (Hokkaido, Tohoku)
+POST {{baseUrl}}/ref_select_search
+Content-Type: application/json
+
+{
+    "txtRefNm": "",
+    "txtRefKn": "",
+    "telno": "",
+    "urlAheadSearch": "",
+    "rgonCheck": [1, 2]
+}
+
+###
+
+### 7. API Tìm kiếm - Tìm theo URL (Partial match)
+# Tìm các công ty có URL chứa "support"
+POST {{baseUrl}}/ref_select_search
+Content-Type: application/json
+
+{
+    "txtRefNm": "",
+    "txtRefKn": "",
+    "telno": "",
+    "urlAheadSearch": "support",
+    "rgonCheck": []
+}
+
+###
+
+### 8. API Tìm kiếm - Không có kết quả
+# System should return SE4101_00040
+POST {{baseUrl}}/ref_select_search
+Content-Type: application/json
+
+{
+    "txtRefNm": "NON_EXISTENT_COMPANY",
+    "txtRefKn": "",
+    "telno": "",
+    "urlAheadSearch": "",
+    "rgonCheck": []
+}
+
+###
+
+### 9. API Xác nhận - Thành công (Chế độ chọn đơn lẻ)
+POST {{baseUrl}}/ref_select_confirm
+Content-Type: application/json
+
+{
+    "kindRef": 0,
+    "contactCds": ["CD001"]
+}
+
+###
+
+### 10. API Xác nhận - Lỗi SE4102_00166 (Chọn nhiều ở chế độ đơn lẻ)
 POST {{baseUrl}}/ref_select_confirm
 Content-Type: application/json
 
@@ -55,12 +139,11 @@ Content-Type: application/json
 
 ###
 
-### 5. API Xác nhận - Trường hợp thành công (Bulk mode)
-# Khi kindRef = 1, cho phép chọn nhiều bản ghi.
+### 11. API Xác nhận - Thành công (Chế độ chọn nhiều/Bulk)
 POST {{baseUrl}}/ref_select_confirm
 Content-Type: application/json
 
 {
     "kindRef": 1,
-    "contactCds": ["CD001", "CD002"]
+    "contactCds": ["CD001", "CD002", "CD003", "CD999"]
 }
