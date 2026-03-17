@@ -112,10 +112,12 @@ contact_selection/
 
 ## 5 — Assumptions & Rules
 
-1. **Phân trang logic**: Kết quả tìm kiếm được giới hạn tối đa 80 bản ghi theo yêu cầu.
-2. **Kiểm tra hợp lệ**: API xác nhận sẽ trả về lỗi `SE4102_00166` nếu chọn nhiều bản ghi trong chế độ chọn đơn lẻ (`kindRef = 0`).
-3. **Mã hóa dữ liệu**: Sử dụng UTF-8 cho tất cả các dữ liệu chuỗi để hỗ trợ đa ngôn ngữ.
-4. **Lombok**: Dự án sử dụng Lombok để tối ưu mã nguồn (Getter/Setter/Constructor).
+1. **Luồng tìm kiếm (Search Flow)**: Hệ thống tuân thủ thiết kế "Count Check". Trước khi lấy dữ liệu chi tiết, API sẽ đếm số lượng bản ghi:
+    - Nếu `count = 0`: Trả về lỗi `SE4101_00040`.
+    - Nếu `count > 80`: Trả về mã cảnh báo `SI4101_00063`. Frontend dựa vào mã này để hiển thị Pop-up xác nhận (Yes/No) trước khi hiển thị dữ liệu.
+2. **Kiểm tra hợp lệ (Validation)**: API xác nhận (`/ref_select_confirm`) sẽ trả về lỗi `SE4102_00166` nếu người dùng chọn nhiều hơn 1 bản ghi trong chế độ chọn đơn lẻ (`kindRef = 0`).
+3. **Mã hóa dữ liệu**: Sử dụng `UTF-8` và hỗ trợ tìm kiếm tiếng Nhật (Forward match cho Name/Kana).
+4. **Tối ưu hóa**: Toàn bộ các giá trị cấu hình (limit, message ID, flags) được quản lý tập trung tại `AppConstants.java`.
 
 ---
 

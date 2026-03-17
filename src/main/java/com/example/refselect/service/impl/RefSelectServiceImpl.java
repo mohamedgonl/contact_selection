@@ -14,6 +14,7 @@ import com.example.refselect.entity.UrlEntity;
 import com.example.refselect.repository.RgonRepository;
 import com.example.refselect.repository.ContactRepository;
 import com.example.refselect.service.RefSelectService;
+import com.example.refselect.constant.AppConstants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,7 +35,8 @@ public class RefSelectServiceImpl implements RefSelectService {
     public LoadOutDto load(RefLoadFormDto request) {
         // 2 Query region list from database
         // Condition: DELETE_FLG = '0' AND RGON_USE_TYP = '1', ORDER BY DISP_ORDER
-        List<RgonEntity> entities = rgonRepository.findByDeleteFlgAndRgonUseTypOrderByDispOrder("0", "1");
+        List<RgonEntity> entities = rgonRepository.findByDeleteFlgAndRgonUseTypOrderByDispOrder(
+                AppConstants.DELETE_FLG_OFF, AppConstants.RGON_USE_TYP_ACTIVE);
 
         // 3 Map results into List<RgonInfoDto>
         List<RgonInfoDto> rgonInfoDtos = entities.stream()
@@ -59,7 +61,7 @@ public class RefSelectServiceImpl implements RefSelectService {
             List<Predicate> predicates = new ArrayList<>();
 
             // Basic condition: not deleted
-            predicates.add(cb.equal(root.get("deleteFlg"), "0"));
+            predicates.add(cb.equal(root.get("deleteFlg"), AppConstants.DELETE_FLG_OFF));
 
             // Forward match for name
             if (request.getTxtRefNm() != null && !request.getTxtRefNm().isEmpty()) {
@@ -84,7 +86,7 @@ public class RefSelectServiceImpl implements RefSelectService {
             // Partial match for URL (joins with URL_M)
             if (request.getUrlAheadSearch() != null && !request.getUrlAheadSearch().isEmpty()) {
                 Join<ContactEntity, UrlEntity> urlJoin = root.join("urls");
-                predicates.add(cb.equal(urlJoin.get("deleteFlg"), "0"));
+                predicates.add(cb.equal(urlJoin.get("deleteFlg"), AppConstants.DELETE_FLG_OFF));
                 predicates.add(cb.like(urlJoin.get("urlAddr"), "%" + request.getUrlAheadSearch() + "%"));
                 query.distinct(true);
             }
@@ -92,15 +94,20 @@ public class RefSelectServiceImpl implements RefSelectService {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
-        List<ContactEntity> entities = contactRepository.findAll(spec);
-        int totalCount = entities.size();
+        long totalCountLong = contactRepository.count(spec);
+        int totalCount = (int) totalCountLong;
 
         // Check count for message IDs
         String messageId = null;
         if (totalCount == 0) {
-            messageId = "SE4101_00040";
-        } else if (totalCount > 80) {
-            messageId = "SI4101_00063";
+            messageId = AppConstants.MSG_ERROR_NO_RESULTS;
+        } else if (totalCount > AppConstants.SEARCH_LIMIT) {
+            messageId = AppConstants.MSG_WARN_LIMIT_EXCEEDED;
+        }
+
+        List<ContactEntity> entities = new ArrayList<>();
+        if (totalCount > 0) {
+            entities = contactRepository.findAll(spec);
         }
 
         // Map results
@@ -110,9 +117,9 @@ public class RefSelectServiceImpl implements RefSelectService {
                     String combinedUrls = "";
                     if (entity.getUrls() != null) {
                         combinedUrls = entity.getUrls().stream()
-                                .filter(u -> "0".equals(u.getDeleteFlg()))
+                                .filter(u -> AppConstants.DELETE_FLG_OFF.equals(u.getDeleteFlg()))
                                 .map(UrlEntity::getUrlAddr)
-                                .collect(Collectors.joining(" / "));
+                                .collect(Collectors.joining(AppConstants.URL_SEPARATOR));
                     }
 
                     return RefSearchResultDto.builder()
@@ -137,11 +144,13 @@ public class RefSelectServiceImpl implements RefSelectService {
     @Override
     public RefSelectResponseDto select(RefSelectFormDto request) {
         // (1) Validation for selection
-        // Rule: If multiple selected in non-bulk mode (kindRef == 0), show error SE4102_00166
-        if (request.getContactCds() != null && request.getContactCds().size() > 1 && Integer.valueOf(0).equals(request.getKindRef())) {
+        // Rule: If multiple selected in non-bulk mode (kindRef == 0), show error
+        // SE4102_00166
+        if (request.getContactCds() != null && request.getContactCds().size() > 1
+                && Integer.valueOf(AppConstants.KIND_REF_SINGLE).equals(request.getKindRef())) {
             return RefSelectResponseDto.builder()
                     .success(false)
-                    .messageId("SE4102_00166")
+                    .messageId(AppConstants.MSG_ERROR_SINGLE_SELECT_ONLY)
                     .build();
         }
 
@@ -154,9 +163,9 @@ public class RefSelectServiceImpl implements RefSelectService {
                     String combinedUrls = "";
                     if (entity.getUrls() != null) {
                         combinedUrls = entity.getUrls().stream()
-                                .filter(u -> "0".equals(u.getDeleteFlg()))
+                                .filter(u -> AppConstants.DELETE_FLG_OFF.equals(u.getDeleteFlg()))
                                 .map(UrlEntity::getUrlAddr)
-                                .collect(Collectors.joining(" / "));
+                                .collect(Collectors.joining(AppConstants.URL_SEPARATOR));
                     }
 
                     return RefSearchResultDto.builder()
